@@ -78,5 +78,7 @@ class BiDirectionalLSTM(nn.Module):
         x = self.fc(x)
         x = x.view(num_of_rois, total_length, -1)
         log_probs = F.log_softmax(x, dim=-1) # -1 is the last dimension
-        log_probs = log_probs.permute(1, 0, 2) # required by CTCLoss()
+        # permute the dimensions, required by CTCLoss()
+        # batch_size x seq_len x num_of_classes -> seq_len x batch_size x num_of_classes
+        log_probs = log_probs.permute(1, 0, 2) 
         return log_probs
