@@ -5,7 +5,7 @@ from modules.shared_conv import SharedConv
 from modules.detector import Detector
 from modules.roi_rotate import ROIRotate
 from modules.recognizer import Recognizer
-import modules.tokens
+import modules.alphanumerics.NUM_OF_CLASSES
 
 from utils.bbox import restore_bbox
 
@@ -44,6 +44,6 @@ class FOTSModel(nn.Module):
             # get the predicted bounding boxes
             bboxes, bbox_to_img_idx = restore_bbox(score_maps, geo_maps, angle_maps)
         rois, seq_lens = self.ROIRotate(shared_features, bboxes, bbox_to_img_idx)
-        logits = self.Recognizer(rois, seq_lens)
+        log_probs = self.Recognizer(rois, seq_lens)
                 
-        return score_maps, geo_maps, angle_maps, bboxes, bbox_to_img_idx, seq_lens, logits
+        return score_maps, geo_maps, angle_maps, bboxes, bbox_to_img_idx, log_probs, seq_lens
