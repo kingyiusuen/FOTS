@@ -56,7 +56,7 @@ class ROIRotate(nn.Module):
         #sorted_bbox_idx = np.argsort(-seq_lens) # sort in descending order, required by pack_padded_sequence()
         #seq_lens = seq_lens[sorted_bbox_idx]
         #padded_aabbs = padded_aabbs[sorted_bbox_idx]
-        aabb_widths = torch.Tensor(aabb_widths)
+        aabb_widths = torch.IntTensor(aabb_widths)
         return padded_aabbs, aabb_widths#, sorted_bbox_idx
 
     def _get_transform_mats_and_aabb_widths(self, bboxes):
