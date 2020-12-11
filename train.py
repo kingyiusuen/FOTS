@@ -7,7 +7,7 @@ from data_loaders.datasets import TotalText
 import modules.alphabet
 from utils.data import collate_fn
 from utils.tokenizer import Tokenizer
-from loss import DetectionLoss
+from loss import FOTSLoss
 
 def fit(model, data_loader, optimizer, criterion, tokenizer, n_epochs=2):
     for epoch in range(n_epochs):
@@ -28,7 +28,7 @@ def fit(model, data_loader, optimizer, criterion, tokenizer, n_epochs=2):
             # backprop and update weights
             loss.backward()
             optimizer.step()
-            print(f"[{epoch+1}, {batch_id+1}] detection loss: {detect_loss:.4f}, recognition loss: {recog_loss:.4f}, loss: {loss:.4f}")
+            print(f"[{epoch+1}, {batch_id+1}] detection loss: {detect_loss:.4f}, recognition loss: {recog_loss:.4f}, total loss: {loss:.4f}")
 
 if __name__ == "__main__":
     model = FOTSModel(is_training=True)
@@ -36,5 +36,5 @@ if __name__ == "__main__":
     tokenizer = Tokenizer(modules.alphabet.CHARS)
     train_loader = DataLoader(total_text, batch_size=2, shuffle=True, collate_fn=collate_fn)
     optimizer = optim.Adam(model.parameters(), lr=0.001)
-    criterion = DetectionLoss()
+    criterion = FOTSLoss()
     fit(model, train_loader, optimizer, criterion, tokenizer)
