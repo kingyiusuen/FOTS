@@ -57,23 +57,25 @@ class BiDirectionalLSTM(nn.Module):
         self.bilstm = nn.LSTM(input_size, hidden_size, bidirectional=True)
         self.fc = nn.Linear(hidden_size * 2, num_of_classes)
 
-    def forward(self, x, seq_lens):
+    def forward(self, seqs, seq_lens):
         """
         Args:
-            x (Tensor): (N, W, 256).
+            seqs (Tensor): (N, W, 256).
             seq_lens (list): (N). The bounding box widths before padding.
 
         Returns:
             x (Tensor): (N).
         """
+        # https://discuss.pytorch.org/t/why-do-we-need-flatten-parameters-when-using-rnn-with-dataparallel/46506
+        self.bilstm.flatten_parameters()
         # https://discuss.pytorch.org/t/why-do-we-need-to-pack-padded-batches-of-sequences-in-pytorch/47977
-        total_length = x.shape[1]  # get the max sequence length
-        packed_seq = pack_padded_sequence(x, seq_lens, batch_first=True, enforce_sorted=False)
+        total_length = seqs.shape[1]  # get the max sequence length
+        packed_seq = pack_padded_sequence(seqs, seq_lens, batch_first=True, enforce_sorted=False)
         packed_output, _ = self.bilstm(packed_seq)
         unpacked_output, _ = pad_packed_sequence(packed_output, batch_first=True, total_length=total_length)
         num_of_rois, total_length, hidden_size = list(unpacked_output.shape)
         x = unpacked_output.contiguous().view(total_length * num_of_rois, hidden_size)
         x = self.fc(x)
         x = x.view(num_of_rois, total_length, -1)
-        x = F.log_softmax(x, dim=-1) # -1 is the last dimension
-        return x
+        log_probs = F.log_softmax(x, dim=-1) # -1 is the last dimension
+        return log_probs
