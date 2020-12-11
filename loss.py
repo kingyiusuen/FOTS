@@ -52,7 +52,7 @@ class DetectionLoss(torch.nn.Module):
 class RecognitionLoss(nn.Module):
     def __init__(self):
         super().__init__()
-        self.ctc_loss = CTCLoss(blank=0, reduction='mean')
+        self.ctc_loss = CTCLoss(blank=0, reduction='mean', zero_infinity=True)
 
     def forward(self, log_probs, indexed_tokens_true, seq_lens_pred, seq_lens_true):
         L_recog = self.ctc_loss(log_probs, indexed_tokens_true, seq_lens_pred, seq_lens_true)
