@@ -54,8 +54,8 @@ class RecognitionLoss(nn.Module):
         super().__init__()
         self.ctc_loss = CTCLoss(blank=0, reduction='mean')
 
-    def forward(self, log_probs, indexed_tokens_true, len_pred, len_true):
-        L_recog = self.ctc_loss(log_probs, indexed_tokens_true, len_pred, len_true)
+    def forward(self, log_probs, indexed_tokens_true, seq_lens_pred, seq_lens_true):
+        L_recog = self.ctc_loss(log_probs, indexed_tokens_true, seq_lens_pred, seq_lens_true)
         return L_recog
 
 class FOTSLoss(nn.Module):
@@ -67,12 +67,12 @@ class FOTSLoss(nn.Module):
 
     def forward(self, score_map_true, geo_map_true, angle_map_true, 
             score_map_pred, geo_map_pred, angle_map_pred, training_mask, 
-            log_probs, indexed_tokens_true, len_pred, len_true):
+            log_probs, indexed_tokens_true, seq_lens_pred, seq_lens_true):
         L_detect = self.detection_loss(
             score_map_true, geo_map_true, angle_map_true, 
             score_map_pred, geo_map_pred, angle_map_pred, 
             training_mask
         )
-        L_recog = self.recognition_loss(log_probs, indexed_tokens_true, len_pred, len_true)
+        L_recog = self.recognition_loss(log_probs, indexed_tokens_true, seq_lens_pred, seq_lens_true)
         L = L_detect + self.lambda_recog * L_recog
         return L_detect, L_recog, L
