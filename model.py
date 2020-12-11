@@ -5,7 +5,7 @@ from modules.shared_conv import SharedConv
 from modules.detector import Detector
 from modules.roi_rotate import ROIRotate
 from modules.recognizer import Recognizer
-import modules.alphanumerics.NUM_OF_CLASSES
+import modules.alphabet
 
 from utils.bbox import restore_bbox
 
@@ -19,7 +19,7 @@ class FOTSModel(nn.Module):
         self.SharedConv = SharedConv()
         self.Detector = Detector()
         self.ROIRotate = ROIRotate()
-        self.Recognizer = Recognizer(num_of_classes=modules.tokens.NUM_OF_CLASSES)
+        self.Recognizer = Recognizer(num_of_classes=modules.alphabet.NUM_OF_CLASSES)
         self.is_training = is_training 
 
     def forward(self, imgs, bboxes=None, bbox_to_img_idx=None):
