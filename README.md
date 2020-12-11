@@ -1,6 +1,6 @@
 # FOTS: Fast Oriented Text Spotting with a Unified Network
 
-## Introduction
+## Model Architecture
 
 This model largely draws inspiration from a general object detection algorithm. A CNN is first used to encode the input image into feature maps. Each spatial location at a feature map corresponds to a region of the input image. The feature maps are then passed into a text detection branch which consists of a classifier to predict the existence of text at each spatial location, and a regressor to predict the geometries of the bounding box (specifically, the distances to the four edges and the rotation angle). 
 
