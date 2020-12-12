@@ -2,7 +2,8 @@
 
 import torch
 import numpy as np
-from shapely.geometry import Polygon
+import cv2
+#from shapely.geometry import Polygon
 
 def restore_bbox(score_maps, geo_maps, angle_maps, score_map_threshold=0.5, nms_threshold=0.3):
     """ Restore the NMS-ed bounding boxes of each image.
@@ -125,23 +126,32 @@ def rbox_to_bbox(origins, geo_map, angle_map):
 # Non-Maximum Suppression
 # Reference: https://github.com/argman/EAST/blob/master/locality_aware_nms.py
 
+def rectangle_area(rect):
+    tl, tr, br, _ = rect
+    return np.linalg.norm(tl - tr) * np.linalg.norm(tr - br)
+
 def intersection(g, p):
     """ Find the intersection over union of two polygons. 
     
     Args:
-        g (ndarray): (9).
-        p (ndarray): (9).
+        g (ndarray): (9). First 8 are coordinates, last one is probability.
+        p (ndarray): (9). First 8 are coordinates, last one is probability.
     """
-    g = Polygon(g[:8].reshape((4, 2)))
-    p = Polygon(p[:8].reshape((4, 2)))
-    if not g.is_valid or not p.is_valid:
-        return 0
-    inter = Polygon(g).intersection(Polygon(p)).area
-    union = g.area + p.area - inter
+    max_x = int(max(np.max(g[0,:8]), np.max(p[0,:8])))
+    max_y = int(max(np.max(g[1,:8]), np.max(p[1,:8])))
+    g = g[:8].reshape((4, 2))
+    p = p[:8].reshape((4, 2))
+    g_mask = np.zeros((max_x, max_y), dtype=np.uint8)
+    p_mask = np.zeros((max_x, max_y), dtype=np.uint8)
+    # the area of intersection is only an approximation 
+    # because we are converting float to int
+    cv2.fillPoly(g_mask, [np.int0(g)], 1)
+    cv2.fillPoly(p_mask, [np.int0(p)], 1)
+    inter = cv2.countNonZero(np.bitwise_and(g_mask, p_mask))
+    union = rectangle_area(g) + rectangle_area(p) - inter
     if union == 0:
         return 0
-    else:
-        return inter/union
+    return inter / union
 
 def weighted_merge(g, p):
     g[:8] = (g[8] * g[:8] + p[8] * p[:8])/(g[8] + p[8])
