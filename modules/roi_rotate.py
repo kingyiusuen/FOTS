@@ -88,7 +88,7 @@ class ROIRotate(nn.Module):
             # axis-aligned bounding box does not exceed maximum possible feature map
             # width (the ones at the center of shared convolutions) 
             height_dst = self.aabb_height
-            width_dst = min(int(height_dst * height_src / width_src), 160) 
+            width_dst = min(round(height_dst * height_src / width_src), 160) 
             tl_dst = (0, 0)
             tr_dst = (width_dst, 0)
             bl_dst = (0, 8)
