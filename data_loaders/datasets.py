@@ -10,10 +10,14 @@ from torchvision import transforms
 from utils.data import aug, sort_points_clockwise, generate_rbox
 
 class TotalText(Dataset):
-    def __init__(self, root_dir):
+    def __init__(self, root_dir='./', train=True):
         self.root_dir = root_dir
-        self.img_dir = os.path.join(self.root_dir, 'datasets/totaltext/Train')
-        self.gt_dir = os.path.join(self.root_dir, 'datasets/totaltext/GT_Train')
+        if train:
+            self.img_dir = os.path.join(self.root_dir, 'datasets/totaltext/Train')
+            self.gt_dir = os.path.join(self.root_dir, 'datasets/totaltext/GT_Train')
+        else:
+            self.img_dir = os.path.join(self.root_dir, 'datasets/totaltext/Test')
+            self.gt_dir = os.path.join(self.root_dir, 'datasets/totaltext/GT_Test')
         self.img_filenames = [file.name.split('.')[0] for file in os.scandir(self.img_dir)] # keep the prefix, drop the file extension
         self.transform = transforms.Compose([
             transforms.ToTensor(), # this modifies the shape of img from H x W x C to C x H x W
@@ -73,7 +77,7 @@ class TotalText(Dataset):
         return self[rand_idx]
 
 class SynthText(Dataset):
-    def __init__(self, root_dir):
+    def __init__(self, root_dir='./s'):
         self.root_dir = root_dir
         self.img_dir = os.path.join(self.root_dir, 'datasets/SynthText')
         gt_path = os.path.join(self.root_dir, 'datasets/SynthText/gt.mat')
