@@ -39,9 +39,14 @@ class TotalText(Dataset):
         return img_filename, img, bboxes, texts, score_map, geo_map, angle_map, training_mask
     
     def _load_annotations(self, img_filename):
-        gt_filename = f'gt_{img_filename}.mat' if self.train else f'poly_gt_{img_filename}.mat'
-        gt_path = os.path.join(self.gt_dir, gt_filename)
-        gt = loadmat(gt_path)['gt']
+        if self.train:
+            gt_filename = f'gt_{img_filename}.mat'
+            gt_path = os.path.join(self.gt_dir, gt_filename)
+            gt = loadmat(gt_path)['gt']
+        else:
+            gt_filename = f'poly_gt_{img_filename}.mat'
+            gt_path = os.path.join(self.gt_dir, gt_filename)
+            gt = loadmat(gt_path)['polygt']
         bboxes = []
         texts = []
         # ground truth format is ['x:', x-coords, 'y:', y-coords, text, orientation]
