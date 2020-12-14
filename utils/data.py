@@ -118,7 +118,6 @@ def random_crop(img, bboxes, texts, crop_size=640, max_attempts=100):
         crop_area_max_x = crop_area_min_x + crop_size
         crop_area_min_y = np.random.choice(empty_ys)
         crop_area_max_y = crop_area_min_y + crop_size
-        
         # lambda functions to check whether a point is inside/outside the crop area
         is_point_inside = lambda point: crop_area_min_x <= point[0] <= crop_area_max_x and \
                                         crop_area_min_y <= point[1] <= crop_area_max_y
@@ -135,6 +134,8 @@ def random_crop(img, bboxes, texts, crop_size=640, max_attempts=100):
             continue
         # try again if there is no text in the cropped area
         if len(bboxes_inside_crop_area) == 0:
+            continue
+        if len(text for text in texts[bboxes_inside_crop_area] if text != "#") == 0:
             continue
         # crop
         img = img[crop_area_min_y:crop_area_max_y, crop_area_min_x:crop_area_max_x, :]
