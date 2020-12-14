@@ -132,7 +132,7 @@ def random_crop(img, bboxes, texts, crop_size=640, max_attempts=50):
         # try again if there is no text in the cropped area
         if len(bboxes_inside_crop_area) == 0:
             continue
-        if len(text for text in texts[bboxes_inside_crop_area] if text != "#") == 0:
+        if len([text for text in texts[bboxes_inside_crop_area] if text != "#"]) == 0:
             continue
         # crop
         img = img[crop_area_min_y:crop_area_max_y, crop_area_min_x:crop_area_max_x, :]
@@ -183,29 +183,35 @@ def aug(img, bboxes, texts, crop_size=640, max_attempts=50):
         texts (ndarray): (N'). Text labels remaining after cropping. 
 
     """
-    height, width, _ = img.shape
     try:
-        # resize the longer side of the image to 2560 pixels while maintaining the aspect ratio
-        scale = 2560 / np.maximum(height, width)
-        img, bboxes = rescale(img, bboxes, scale_x=scale, scale_y=scale)
-
-        # rotate [-10, 10] degree
-        angle = np.random.uniform(-10, 10)
-        img, bboxes = rotate(img, bboxes, angle)
-
-        # rescale the height of the image with ratio from 0.8 to 1.2 while keeping width unchanged
-        scale = np.random.uniform(0.8, 1.2)
-        img, bboxes = rescale(img, bboxes, scale_x=1, scale_y=scale)
-
-        # random cropping
-        img, bboxes, texts = random_crop(img, bboxes, texts, crop_size=crop_size)
+        img, bboxes, texts = aug_with_random_crop(img, bboxes, texts, crop_size)
     except:
-        # pad to the longer side
-        new_length = max(crop_size, height, width)
-        img = pad_to_fixed_size(img, new_length, new_length)
-        # rescale to crop_size x crop_size
-        scale = crop_size / new_length
-        img, bboxes = rescale(img, bboxes, scale_x=scale, scale_y=scale)
+        img, bboxes, texts = aug_without_random_crop(img, bboxes, texts, crop_size)
+    return img, bboxes, texts
+
+def aug_with_random_crop(img, bboxes, texts, crop_size=640):
+    height, width, _ = img.shape
+    # resize the longer side of the image to 2560 pixels while maintaining the aspect ratio
+    scale = 2560 / np.maximum(height, width)
+    img, bboxes = rescale(img, bboxes, scale_x=scale, scale_y=scale)
+    # rotate [-10, 10] degree
+    angle = np.random.uniform(-10, 10)
+    img, bboxes = rotate(img, bboxes, angle)
+    # rescale the height of the image with ratio from 0.8 to 1.2 while keeping width unchanged
+    scale = np.random.uniform(0.8, 1.2)
+    img, bboxes = rescale(img, bboxes, scale_x=1, scale_y=scale)
+    # random cropping
+    img, bboxes, texts = random_crop(img, bboxes, texts, crop_size=crop_size)
+    return img, bboxes, texts
+
+def aug_without_random_crop(img, bboxes, texts, crop_size=640):
+    height, width, _ = img.shape
+    # pad to the longer side
+    new_length = max(crop_size, height, width)
+    img = pad_to_fixed_size(img, new_length, new_length)
+    # rescale to crop_size x crop_size
+    scale = crop_size / new_length
+    img, bboxes = rescale(img, bboxes, scale_x=scale, scale_y=scale)
     return img, bboxes, texts
 
 def shrink_polygon(polygon, R=0.3):
