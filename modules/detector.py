@@ -21,10 +21,13 @@ class Detector(nn.Module):
             geo_maps (Tensor): (batch_size, 4, 160, 160).
             angle_maps (Tensor): (batch_size, 1, 160, 160).
         """
+        # have to rescale geo_maps and angle_maps because
+        # the range of the output of sigmoid is [0, 1] but
+        # the ranges of distance and angle are not
         score_maps = self.score_map_conv(shared_features)
         score_maps = torch.sigmoid(score_maps)
         geo_maps = self.geo_map_conv(shared_features)
         geo_maps = torch.sigmoid(geo_maps) * self.crop_size
         angle_maps = self.angle_map_conv(shared_features)
-        angle_maps = torch.sigmoid(angle_maps) * np.pi / 2
+        angle_maps = (torch.sigmoid(angle_maps) - 0.5) * np.pi / 2
         return score_maps, geo_maps, angle_maps
