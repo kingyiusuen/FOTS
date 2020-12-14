@@ -77,7 +77,7 @@ class TotalText(Dataset):
         return self[rand_idx]
 
 class SynthText(Dataset):
-    def __init__(self, root_dir='./s'):
+    def __init__(self, root_dir='./'):
         self.root_dir = root_dir
         self.img_dir = os.path.join(self.root_dir, 'datasets/SynthText')
         gt_path = os.path.join(self.root_dir, 'datasets/SynthText/gt.mat')
