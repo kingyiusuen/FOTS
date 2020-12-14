@@ -68,10 +68,6 @@ class TotalText(Dataset):
         texts = np.array(texts)
         return bboxes, texts
 
-    def _get_random_item(self):
-        rand_idx = np.random.randint(0, len(self)-1)
-        return self[rand_idx]
-
 class SynthText(Dataset):
     def __init__(self, data_dir='./'):
         self.data_dir = data_dir
@@ -115,7 +111,3 @@ class SynthText(Dataset):
         bboxes = np.int0(bboxes)
         texts = np.array(texts)
         return bboxes, texts
-
-    def _get_random_item(self):
-        rand_idx = np.random.randint(0, len(self)-1)
-        return self[rand_idx]
