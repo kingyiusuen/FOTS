@@ -46,8 +46,6 @@ class TotalText(Dataset):
         texts = []
         # ground truth format is ['x:', x-coords, 'y:', y-coords, text, orientation]
         for _, x, _, y, text, orientation in gt:
-            if orientation == "#": # the pound symbol means "don't care"
-                text = "#"
             # remove unnecessary dimensions
             x, y = np.squeeze(x), np.squeeze(y)
             # zip the x and y arrays to get a list of points
