@@ -7,17 +7,15 @@ from scipy.io import loadmat
 from torch.utils.data import Dataset
 from torchvision import transforms
 
-from utils.data import aug, sort_points_clockwise, generate_rbox
+from utils.preprocessing import aug, sort_points_clockwise, generate_rbox
 
 class TotalText(Dataset):
-    def __init__(self, root_dir='./', train=True):
-        self.root_dir = root_dir
-        if train:
-            self.img_dir = os.path.join(self.root_dir, 'datasets/totaltext/Train')
-            self.gt_dir = os.path.join(self.root_dir, 'datasets/totaltext/GT_Train')
-        else:
-            self.img_dir = os.path.join(self.root_dir, 'datasets/totaltext/Test')
-            self.gt_dir = os.path.join(self.root_dir, 'datasets/totaltext/GT_Test')
+    def __init__(self, data_dir='./', train=True):
+        self.data_dir = data_dir
+        self.train = train
+        dir_name = "Train" if self.train else "Test"
+        self.img_dir = os.path.join(self.data_dir, f'datasets/totaltext/{dir_name}')
+        self.gt_dir = os.path.join(self.data_dir, f'datasets/totaltext/GT_{dir_name}')
         self.img_filenames = [file.name.split('.')[0] for file in os.scandir(self.img_dir)] # keep the prefix, drop the file extension
         self.transform = transforms.Compose([
             transforms.ToTensor(), # this modifies the shape of img from H x W x C to C x H x W
@@ -35,16 +33,14 @@ class TotalText(Dataset):
         img_path = os.path.join(self.img_dir, f'{img_filename}.jpg')
         img = cv2.imread(img_path)
         bboxes, texts = self._load_annotations(img_filename)
-        try: 
-            img, bboxes, texts = aug(img, bboxes, texts)
-        except: # return a random item if fails to crop
-            return self._get_random_item()
+        img, bboxes, texts = aug(img, bboxes, texts)
         score_map, geo_map, angle_map, training_mask = generate_rbox(img, bboxes, texts)
         img = self.transform(img)
         return img_filename, img, bboxes, texts, score_map, geo_map, angle_map, training_mask
     
     def _load_annotations(self, img_filename):
-        gt_path = os.path.join(self.gt_dir, f'gt_{img_filename}.mat')
+        gt_filename = f'gt_{img_filename}.mat' if self.train else f'poly_gt_{img_filename}.mat'
+        gt_path = os.path.join(self.gt_dir, gt_filename)
         gt = loadmat(gt_path)['gt']
         bboxes = []
         texts = []
@@ -77,10 +73,10 @@ class TotalText(Dataset):
         return self[rand_idx]
 
 class SynthText(Dataset):
-    def __init__(self, root_dir='./'):
-        self.root_dir = root_dir
-        self.img_dir = os.path.join(self.root_dir, 'datasets/SynthText')
-        gt_path = os.path.join(self.root_dir, 'datasets/SynthText/gt.mat')
+    def __init__(self, data_dir='./'):
+        self.data_dir = data_dir
+        self.img_dir = os.path.join(self.data_dir, 'datasets/SynthText')
+        gt_path = os.path.join(self.data_dir, 'datasets/SynthText/gt.mat')
         gt = loadmat(gt_path, squeeze_me=True, variable_names=['imnames', 'wordBB', 'txt'])
         self.img_filenames = gt['imnames']
         self.all_bboxes = gt['wordBB']
@@ -101,10 +97,7 @@ class SynthText(Dataset):
         img_path = os.path.join(self.img_dir, img_filename)
         img = cv2.imread(img_path)
         bboxes, texts = self._load_annotations(idx)
-        try:
-            img, bboxes, texts = aug(img, bboxes, texts)
-        except: # return a random item if fails to crop
-            return self._get_random_item()
+        img, bboxes, texts = aug(img, bboxes, texts)
         score_map, geo_map, angle_map, training_mask = generate_rbox(img, bboxes, texts)
         img = self.transform(img)
         return img_filename, img, bboxes, texts, score_map, geo_map, angle_map, training_mask
