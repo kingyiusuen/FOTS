@@ -3,19 +3,21 @@
 import torch
 import numpy as np
 import cv2
-#from shapely.geometry import Polygon
 
-def restore_bbox(score_maps, geo_maps, angle_maps, score_map_threshold=0.5, nms_threshold=0.3):
-    """ Restore the NMS-ed bounding boxes of each image.
+from metrics import get_iou
+
+def restore_bbox(score_maps, geo_maps, angle_maps, **kwargs):
+    """ Restore bounding boxes in images given the confidence scores, distances 
+    between each side and rotation angles.
 
     Args:
         score_maps (ndarray): (batch_size, 1, H, W).
         geo_maps (ndarray): (batch_size, 4, H, W).
         angle_maps (ndarray): (batch_size, 1, H, W).
-        score_map_threshold (float):
-        nms_threshold (float):
     
     Returns:
+        bboxes (ndarray).
+        bbox_to_img_idx (ndarray).
     """
     # have to convert to numpy array otherwise some of the code will break
     score_maps = score_maps.detach().cpu().numpy()
@@ -32,7 +34,7 @@ def restore_bbox(score_maps, geo_maps, angle_maps, score_map_threshold=0.5, nms_
         geo_map = geo_maps[i,:,:,:]
         angle_map = angle_maps[i,0,:,:]
         # recover the bounding boxes for image i
-        bboxes_i = restore_bbox_helper(score_map, geo_map, angle_map, score_map_threshold, nms_threshold)
+        bboxes_i = restore_bbox_helper(score_map, geo_map, angle_map, **kwargs)
         if len(bboxes_i) == 0: # if no bounding box in image i
             continue
         bboxes.append(bboxes_i)
@@ -41,19 +43,23 @@ def restore_bbox(score_maps, geo_maps, angle_maps, score_map_threshold=0.5, nms_
     bbox_to_img_idx = np.concatenate(bbox_to_img_idx)
     return bboxes, bbox_to_img_idx
 
-def restore_bbox_helper(score_map, geo_map, angle_map, score_map_threshold=0.5, nms_threshold=0.3):
-    """ Restore the bounding boxes in an image and then apply NMS.
+def restore_bbox_helper(score_map, geo_map, angle_map, 
+    score_map_threshold=0.5, nms_threshold=0.3, include_score=False):
+    """ Restore the bounding boxes in a single image and then apply NMS.
 
     Args:
         score_map (ndarray): (H, W).
         geo_map (ndarray): (H, W, 4).
         angle_map (ndarray): (H, W).
-        score_map_threshold (float):
-        nms_threshold (float):
-    
+        score_map_threshold (float): Threshold for initial filtering.
+        nms_threshold (float): IoU threshold for surviving in NMS.
+        include_score (bool): If True, bboxes will be (N, 9) where first 8
+            are coordinates and last one is the confidence score. If False, 
+            bboxes will be (N, 4, 2).
+
     Returns:
-        bboxes_after_nms (ndarray): (N, 4, 2) where N is the number of bounding
-            boxes.
+        bboxes (ndarray): (N, 4, 2) where N is the number of bounding
+            boxes left after NMS.
     
     References:
         https://github.com/jiangxiluning/FOTS.PyTorch/blob/master/FOTS/utils/bbox.py#L166
@@ -71,11 +77,13 @@ def restore_bbox_helper(score_map, geo_map, angle_map, score_map_threshold=0.5, 
         bboxes.reshape(-1, 8), # N x 8
         score_map[origins[:,0], origins[:,1]][:,np.newaxis], # N x 1
     ]) # N x 9
-    bboxes_after_nms = nms_locality(data, nms_threshold)
-    if bboxes_after_nms.shape[0] == 0:
+    bboxes = nms_locality(data, nms_threshold)
+    if bboxes.shape[0] == 0:
         return np.array([])
-    bboxes_after_nms = bboxes_after_nms[:,:8] # drop the score map column
-    return bboxes_after_nms.reshape((-1, 4, 2)) # N x 8
+    if include_score:
+        return bboxes # N x 9
+    bboxes = bboxes[:,:8] # drop the score map column -> N x 8
+    return bboxes.reshape((-1, 4, 2)) # N x 4 x 2
 
 def rbox_to_bbox(origins, geo_map, angle_map):
     """ Find the bounding boxes of the origins given the distances between 
@@ -126,33 +134,6 @@ def rbox_to_bbox(origins, geo_map, angle_map):
 # Non-Maximum Suppression
 # Reference: https://github.com/argman/EAST/blob/master/locality_aware_nms.py
 
-def rectangle_area(rect):
-    tl, tr, br, _ = rect
-    return np.linalg.norm(tl - tr) * np.linalg.norm(tr - br)
-
-def intersection(g, p):
-    """ Find the intersection over union of two polygons. 
-    
-    Args:
-        g (ndarray): (9). First 8 are coordinates, last one is probability.
-        p (ndarray): (9). First 8 are coordinates, last one is probability.
-    """
-    max_x = int(max(np.max(g[0,:8]), np.max(p[0,:8])))
-    max_y = int(max(np.max(g[1,:8]), np.max(p[1,:8])))
-    g = g[:8].reshape((4, 2))
-    p = p[:8].reshape((4, 2))
-    g_mask = np.zeros((max_x, max_y), dtype=np.uint8)
-    p_mask = np.zeros((max_x, max_y), dtype=np.uint8)
-    # the area of intersection is only an approximation 
-    # because we are converting float to int
-    cv2.fillPoly(g_mask, [np.int0(g)], 1)
-    cv2.fillPoly(p_mask, [np.int0(p)], 1)
-    inter = cv2.countNonZero(np.bitwise_and(g_mask, p_mask))
-    union = rectangle_area(g) + rectangle_area(p) - inter
-    if union == 0:
-        return 0
-    return inter / union
-
 def weighted_merge(g, p):
     g[:8] = (g[8] * g[:8] + p[8] * p[:8])/(g[8] + p[8])
     g[8] = (g[8] + p[8])
@@ -166,7 +147,7 @@ def standard_nms(S, thres):
         i = order[0]
         keep.append(i)
         # compute the IoU of the current proposal with every other proposal
-        ovr = np.array([intersection(S[i], S[t]) for t in order[1:]])
+        ovr = np.array([get_iou(S[i], S[t]) for t in order[1:]])
         # keep the proposals if their IoU is smaller than the threshold
         inds = np.where(ovr <= thres)[0]
         order = order[inds+1] # add 1 because the first one is i, which has already been selected
@@ -184,7 +165,7 @@ def nms_locality(polys, thres=0.3):
     S = []
     p = None
     for g in polys:
-        if p is not None and intersection(g, p) > thres:
+        if p is not None and get_iou(g, p) > thres:
             p = weighted_merge(g, p)
         else:
             if p is not None:
