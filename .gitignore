@@ -1,0 +1,8 @@
+/logs
+/checkpoints
+/__pycache__
+/junk
+/datasets
+
+test.py
+test.ipynb
