@@ -12,7 +12,7 @@ from FOTS.utils.bbox import restore_bbox
 from FOTS.utils.metrics import true_false_positives, precision_recall_f1
 from trainer import Trainer
 
-def test(model, test_dataset):
+def evaluate(model, test_dataset):
     true_positives = 0
     false_positives = 0
     num_of_gt_bboxes = 0
@@ -41,12 +41,12 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--train", help="dataset name for training the model", choices=["ICDAR2013", "ICDAR2015", "SynthText"])
-    parser.add_argument("--test", help="dataset name for testing the model", choices=["ICDAR2013", "ICDAR2015"])
+    parser.add_argument("--eval", help="dataset name for evaluating the model", choices=["ICDAR2013", "ICDAR2015"])
     parser.add_argument("--predict", help="path to an image or a folder of images on which you want to perform text recognition")
     parser.add_argument("--ckpt", help="path to a checkpoint")
     args = parser.parse_args()
 
-    if sum(1 for arg in [args.train, args.test, args.predict] if arg) != 1:
+    if sum(1 for arg in [args.train, args.eval, args.predict] if arg) != 1:
         raise RuntimeError("Use one and only one of --train, --test or --predict.")
 
     # create a model instance and load a checkpoint if provided
@@ -82,11 +82,11 @@ if __name__ == "__main__":
         trainer.train(train_dataloader, val_dataloader)
     # get evaluation metrics (precision, recall, f1 score) on a test set
     # SynthText cannot be tested because it has no test set
-    elif args.test:
+    elif args.eval:
         if not args.ckpt:
             raise RuntimeError("Please specify the path to a checkpoint with --ckpt.")
-        if args.test == "ICDAR2013":
+        if args.eval == "ICDAR2013":
             test_dataset = ICDAR(year=2013, train=False)
-        elif args.test == "ICDAR2015":
+        elif args.eval == "ICDAR2015":
             test_dataset = ICDAR(year=2015, train=False)
-        test(model, test_dataset)
+        evaluate(model, test_dataset)

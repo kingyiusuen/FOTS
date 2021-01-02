@@ -36,11 +36,11 @@ dataloader_factory:
 
 dataloader:
   ICDAR2013: 
-    batch_size: 2
-    num_workers: 1
+    batch_size: 16
+    num_workers: 2
   ICDAR2015: 
     batch_size: 16
-    num_workers: 4
+    num_workers: 2
   SynthText: 
     batch_size: 16
-    num_workers: 4
+    num_workers: 2

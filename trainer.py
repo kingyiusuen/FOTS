@@ -39,7 +39,7 @@ class Trainer:
         self.criterion = DetectionLoss()
 
     def train(self, train_dataloader, val_dataloader):
-        dataloaders_dict = {"train": train_dataloader, "val": val_dataloader}
+        dataloader_dict = {"train": train_dataloader, "val": val_dataloader}
         self.model.to(self.device)
         writer = SummaryWriter(os.path.join(self.log_dir, self.get_curr_time()))
 
@@ -51,7 +51,7 @@ class Trainer:
                 else:
                     self.model.eval()
                 
-                pbar = tqdm(dataloaders_dict[phase], desc=f"Epoch {epoch} ({phase})")
+                pbar = tqdm(dataloader_dict[phase], desc=f"Epoch {epoch} ({phase})")
                 for batch in pbar:
                     # put data in GPU (if available)
                     batch = [x.to(self.device) if isinstance(x, torch.Tensor) else x for x in batch]
@@ -81,7 +81,7 @@ class Trainer:
                 # log the loss values (averaged over all batches in this epoch)
                 # to tensorboard
                 for loss, val in epoch_loss[phase].items():
-                    val /= len(dataloaders_dict[phase].dataset)
+                    val /= len(dataloader_dict[phase].dataset)
                     writer.add_scalar(f"{phase}/{loss}", val, epoch)
 
             # adjust learning rate
