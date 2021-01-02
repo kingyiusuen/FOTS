@@ -116,13 +116,19 @@ class SynthText(Dataset):
         img_filename = self.img_filenames[idx]
         img_path = os.path.join(self.img_dir, img_filename)
         img = cv2.imread(img_path)
-        bboxes, texts = self.load_annotations(idx)
-        height, width, _ = img.shape
-        if height < 640 or width < 640:
-            img, bboxes, texts = rescale_with_padding(img, bboxes, texts, size=640)
-        score_map, geo_map, angle_map, training_mask = generate_rbox(img, bboxes, texts)
-        img = self.transform(img)
-        return img_filename, img, bboxes, texts, score_map, geo_map, angle_map, training_mask
+        # for some images the number of bounding boxes does not match the
+        # number of words and there is really no way to fix it so just return 
+        # a random image
+        try:
+            bboxes, texts = self.load_annotations(idx)
+            height, width, _ = img.shape
+            if height < 640 or width < 640:
+                img, bboxes, texts = rescale_with_padding(img, bboxes, texts, size=640)
+            score_map, geo_map, angle_map, training_mask = generate_rbox(img, bboxes, texts)
+            img = self.transform(img)
+            return img_filename, img, bboxes, texts, score_map, geo_map, angle_map, training_mask
+        except:
+            return self.__getitem__(np.random.randint(0, len(self)))
 
     def load_annotations(self, idx):
         # the format of the ground truth annotation file can be found in
