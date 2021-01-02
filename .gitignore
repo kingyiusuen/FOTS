@@ -1,8 +1,8 @@
 /logs
-/checkpoints
 /__pycache__
 /junk
 /datasets
 p2.xlarge.key.pem
 test.py
 test.ipynb
+checkpoint.pt

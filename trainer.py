@@ -1,6 +1,5 @@
 import os
 from datetime import datetime
-
 from tqdm import tqdm
 import torch
 import torch.nn as nn
@@ -10,17 +9,19 @@ from FOTS.model.loss import DetectionLoss
 
 class Trainer:
     def __init__(self, model, optimizer, lr_scheduler, num_epochs=1,
-        start_epoch=0, min_val_loss=float('inf'), no_improve_count=0,
-        checkpoint_dir='./checkpoints', log_dir='./logs'):
+        patience=2, ckpt_filename='checkpoint.pt', log_dir='./logs', 
+        start_epoch=0, min_val_loss=float('inf'), no_improve_count=0):
         """
         Args:
             num_epochs (int): Maximum number of epochs to run.
+            patience (int): How many epochs to wait to terminate training
+                after last time validation loss improved.
+            ckpt_filename (str): Checkpoint filename.
+            log_dir (str): Directory for storing logs.
             start_epoch (int): The starting number of epoch count.
             min_val_loss (float): Lowest validation loss seen during training.
             no_improve_count (int): How many epoch has the validation loss 
                 stops improving.
-            checkpoint_dir (str): Directory for storing checkpoints.
-            log_dir (str): Directory for storing logs.
         """
         self.model = model
         if isinstance(self.model, nn.DataParallel):
@@ -29,12 +30,11 @@ class Trainer:
         self.lr_scheduler = lr_scheduler
         self.start_epoch = start_epoch
         self.num_epochs = num_epochs
+        self.patience = patience
+        self.ckpt_filename = ckpt_filename
+        self.log_dir = log_dir
         self.min_val_loss = min_val_loss
         self.no_improve_count = no_improve_count
-        self.checkpoint_dir = checkpoint_dir
-        if not os.path.exists(self.checkpoint_dir):
-            os.makedirs(self.checkpoint_dir)
-        self.log_dir = log_dir
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.criterion = DetectionLoss()
 
@@ -116,7 +116,7 @@ class Trainer:
                 'no_improve_count': self.no_improve_count
             }
         }
-        torch.save(state_dict, os.path.join(self.checkpoint_dir, 'best_model.pt'))
+        torch.save(state_dict, self.ckpt_filename)
 
     def get_curr_time(self):
         return datetime.now().strftime("%Y%m%d-%H%M%S")

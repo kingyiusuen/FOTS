@@ -1,0 +1,46 @@
+optimizer:
+  lr: 0.01
+
+lr_scheduler:
+  gamma: 0.95
+
+trainer:
+  num_epochs: 1
+  patience: 2
+  log_dir: ./logs
+  ckpt_filename: checkpoint.pt
+
+dataset:
+  ICDAR2013: 
+    train_img: datasets/ICDAR2013/ch2_training_images
+    train_gt: datasets/ICDAR2013/ch2_training_localization_transcription_gt
+    test_img: datasets/ICDAR2013/Challenge2_Test_Task12_Images
+    test_gt: datasets/ICDAR2013/Challenge2_Test_Task1_GT
+  ICDAR2015:
+    train_img: datasets/ICDAR2015/ch4_training_images
+    train_gt: datasets/ICDAR2015/ch4_training_localization_transcription_gt
+    test_img: datasets/ICDAR2015/ch4_test_images
+    test_gt: datasets/ICDAR2015/Challenge4_Test_Task4_GT
+  SynthText: datasets/SynthText
+
+dataloader_factory:
+  ICDAR2013: 
+    val_ratio: 0.2
+    seed: 0
+  ICDAR2013: 
+    val_ratio: 0.2
+    seed: 0
+  SynthText: 
+    val_ratio: 0.05
+    seed: 0
+
+dataloader:
+  ICDAR2013: 
+    batch_size: 2
+    num_workers: 1
+  ICDAR2015: 
+    batch_size: 16
+    num_workers: 4
+  SynthText: 
+    batch_size: 16
+    num_workers: 4

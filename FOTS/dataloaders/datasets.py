@@ -1,6 +1,6 @@
 import os
 import re
-
+import yaml
 import cv2
 import numpy as np
 from scipy.io import loadmat
@@ -10,26 +10,29 @@ from shapely.geometry import Polygon
 
 from ..utils.preprocessing import rescale_with_padding, img_aug, sort_points_clockwise, generate_rbox
 
+with open("config.yml", "r") as ymlfile:
+    config = yaml.safe_load(ymlfile)
+
 class ICDAR(Dataset):
     def __init__(self, year, train=True):
         self.train = train
         self.year = year
         if self.year == 2013:
             if self.train:
-                self.img_dir = 'datasets/ICDAR2013/ch2_training_images'
-                self.gt_dir = 'datasets/ICDAR2013/ch2_training_localization_transcription_gt'
+                self.img_dir = config["dataset"]["ICDAR2013"]["train_img"]
+                self.gt_dir = config["dataset"]["ICDAR2013"]["train_gt"]
             else:
-                self.img_dir = 'datasets/ICDAR2013/Challenge2_Test_Task12_Images'
-                self.gt_dir = 'datasets/ICDAR2013/Challenge2_Test_Task1_GT'
+                self.img_dir = config["dataset"]["ICDAR2013"]["test_img"]
+                self.gt_dir = config["dataset"]["ICDAR2013"]["test_gt"]
         elif self.year == 2015:
             if self.train:
-                self.img_dir = 'datasets/ICDAR2015/ch4_training_images'
-                self.gt_dir = 'datasets/ICDAR2015/ch4_training_localization_transcription_gt'
+                self.img_dir = config["dataset"]["ICDAR2015"]["train_img"]
+                self.gt_dir = config["dataset"]["ICDAR2015"]["train_gt"]
             else:
-                self.img_dir = 'datasets/ICDAR2015/ch4_test_images'
-                self.gt_dir = 'datasets/ICDAR2015/Challenge4_Test_Task4_GT'
+                self.img_dir = config["dataset"]["ICDAR2015"]["test_img"]
+                self.gt_dir = config["dataset"]["ICDAR2015"]["test_img"]
         else:
-            raise RuntimeError('year must be either 2013 or 2015.')
+            raise ValueError('Year must be either 2013 or 2015.')
         self.img_filenames = [file.name for file in os.scandir(self.img_dir)]
         self.transform = transforms.Compose([
             # this modifies the shape of img from H x W x C to C x H x W and
@@ -92,8 +95,8 @@ class ICDAR(Dataset):
 
 class SynthText(Dataset):
     def __init__(self):
-        self.img_dir = 'datasets/SynthText'
-        gt_path = 'datasets/SynthText/gt.mat'
+        self.img_dir = config["dataset"]["SynthText"]
+        gt_path = os.path.join(self.img_dir, "gt.mat")
         gt = loadmat(gt_path, squeeze_me=True, variable_names=['imnames', 'wordBB', 'txt'])
         self.img_filenames = gt['imnames']
         self.all_bboxes = gt['wordBB']

@@ -1,5 +1,5 @@
 import argparse
-
+import yaml
 from tqdm import tqdm
 import torch
 import torch.nn as nn
@@ -30,18 +30,23 @@ def test(model, test_dataset):
             true_positives += test_outputs['true_positives']
             false_positives += test_outputs['false_positives']
             num_of_gt_bboxes += test_outputs['num_of_gt_bboxes']
-    return precision_recall_f1(true_positives, false_positives, num_of_gt_bboxes)
+    eval_metrics = precision_recall_f1(true_positives, false_positives, num_of_gt_bboxes)
+    for key, val in eval_metrics.items():
+        print(f"{key}: val\n")
+    return eval_metrics
 
 if __name__ == "__main__":
+    with open("config.yml", "r") as ymlfile:
+        config = yaml.safe_load(ymlfile)
+
     parser = argparse.ArgumentParser()
     parser.add_argument("--train", help="dataset name for training the model", choices=["ICDAR2013", "ICDAR2015", "SynthText"])
-    parser.add_argument("--epoch", type=int, help="number of training epochs", default=10)
     parser.add_argument("--test", help="dataset name for testing the model", choices=["ICDAR2013", "ICDAR2015"])
     parser.add_argument("--predict", help="path to an image or a folder of images on which you want to perform text recognition")
     parser.add_argument("--ckpt", help="path to a checkpoint")
     args = parser.parse_args()
 
-    if args.train + args.test + args.predict != 1:
+    if sum(1 for arg in [args.train, args.test, args.predict] if arg) != 1:
         raise RuntimeError("Use one and only one of --train, --test or --predict.")
 
     # create a model instance and load a checkpoint if provided
@@ -57,23 +62,23 @@ if __name__ == "__main__":
         raise NotImplementedError
     # resume training or train from scratch
     elif args.train:
-        optimizer = optim.Adam(model.parameters(), lr=0.01)
-        lr_scheduler = optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.95)
+        optimizer = optim.Adam(model.parameters(), **config["optimizer"])
+        lr_scheduler = optim.lr_scheduler.ExponentialLR(optimizer, **config["lr_scheduler"])
         if args.ckpt:
             print(f"Resume training using checkpoint {args.ckpt}.")
             optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
             lr_scheduler.load_state_dict(checkpoint['lr_scheduler_state_dict'])
-            trainer = Trainer(model, optimizer, lr_scheduler, num_epochs=args.epoch, **checkpoint['trainer_config'])
+            trainer = Trainer(model, optimizer, lr_scheduler, **config["trainer"], **checkpoint['trainer_config'])
         else:
             print("Training the model from scratch because no checkpoint is provided.")
-            trainer = Trainer(model, optimizer, lr_scheduler, num_epochs=args.epoch)
+            trainer = Trainer(model, optimizer, lr_scheduler, **config["trainer"])
         if args.train == "ICDAR2013":
-            dataloader_factory = ICDAR2013DataLoaderFactory(val_ratio=0.2)
+            dataloader_factory = ICDAR2013DataLoaderFactory(**config["dataloader_factory"][args.train])
         elif args.train == "ICDAR2015":
-            dataloader_factory = ICDAR2015DataLoaderFactory(val_ratio=0.2)
+            dataloader_factory = ICDAR2015DataLoaderFactory(**config["dataloader_factory"][args.train])
         elif args.train == "SynthText":
-            dataloader_factory = SynthTextDataLoaderFactory(val_ratio=0.1)
-        train_dataloader, val_dataloader = dataloader_factory.get_dataloaders(batch_size=4, num_workers=1)
+            dataloader_factory = SynthTextDataLoaderFactory(**config["dataloader_factory"][args.train])
+        train_dataloader, val_dataloader = dataloader_factory.get_dataloaders(**config["dataloader"][args.train])
         trainer.train(train_dataloader, val_dataloader)
     # get evaluation metrics (precision, recall, f1 score) on a test set
     # SynthText cannot be tested because it has no test set
