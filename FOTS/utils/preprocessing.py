@@ -481,3 +481,19 @@ def collate_fn(batch):
     bboxes = np.concatenate(bboxes)
     texts = flatten_tuple_of_numpy_arrays(texts)
     return img_filenames, imgs, texts, bboxes, img_idx_mapping, score_maps, geo_maps, angle_maps, training_masks
+
+def fit_img_to_net_arch(img, bboxes):
+    # if image size is too large, CPU/GPU may run out of memory, so resize it
+    _, height, width = img.shape
+    if height > 2400 or width > 2400:
+        scale = 2400 / max(height, width)
+        img, bboxes = rescale(img, bboxes, scale, scale)
+    # due to the network architecture, the height and width of the input
+    # image must be a multiple of 32, so pad it
+    new_height = height + (32 - height % 32) % 32
+    new_width = width + (32 - width % 32) % 32
+    img = img.permute(1, 2, 0)
+    img = pad_to_fixed_size(img, new_height, new_width)
+    img = img.permute(2, 0, 1)
+    img = img.unsqueeze(0) # get an extra dimension which is supposed to represent the batch
+    return img, bboxes

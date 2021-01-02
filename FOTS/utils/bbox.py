@@ -24,15 +24,14 @@ def restore_bbox(score_maps, geo_maps, angle_maps, **kwargs):
     geo_maps = geo_maps.detach().cpu().numpy()
     geo_maps = geo_maps.transpose((0, 2, 3, 1)) # now geo_map is batch_size x H x W x 4
     angle_maps = angle_maps.detach().cpu().numpy()
-
     bboxes = []
     bbox_to_img_idx = []
     num_of_images = score_maps.shape[0]
     for i in range(num_of_images):
         # select the score map, geometry map and angle map for image i
-        score_map = score_maps[i,0,:,:]
-        geo_map = geo_maps[i,:,:,:]
-        angle_map = angle_maps[i,0,:,:]
+        score_map = score_maps[i,0,:,:] # H x W
+        geo_map = geo_maps[i,:,:,:] # H x W x 4
+        angle_map = angle_maps[i,0,:,:] # H x W
         # recover the bounding boxes for image i
         bboxes_i = restore_bbox_helper(score_map, geo_map, angle_map, **kwargs)
         if len(bboxes_i) == 0: # skip if no bounding box in image i
@@ -65,7 +64,6 @@ def restore_bbox_helper(score_map, geo_map, angle_map,
     """
     # filter out areas that have low confidence
     origins = np.argwhere(score_map >= score_map_threshold)
-    print(np.min(score_map), np.max(score_map))
     # sort along the y axis
     origins = origins[np.argsort(origins[:,0])]
     bboxes = rbox_to_bbox(

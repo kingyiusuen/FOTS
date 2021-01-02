@@ -69,7 +69,7 @@ class BiDirectionalLSTM(nn.Module):
         # https://discuss.pytorch.org/t/why-do-we-need-flatten-parameters-when-using-rnn-with-dataparallel/46506
         self.bilstm.flatten_parameters()
         # https://discuss.pytorch.org/t/why-do-we-need-to-pack-padded-batches-of-sequences-in-pytorch/47977
-        total_length = seqs.shape[1]  # get the max sequence length
+        total_length = seqs.shape[1] # get the max sequence length
         packed_seq = pack_padded_sequence(seqs, seq_lens, batch_first=True, enforce_sorted=False)
         packed_output, _ = self.bilstm(packed_seq)
         unpacked_output, _ = pad_packed_sequence(packed_output, batch_first=True, total_length=total_length)

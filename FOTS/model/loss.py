@@ -17,23 +17,25 @@ class DetectionLoss(torch.nn.Module):
         L_cls = torch.sum(L_cls * training_mask) / num_positive_samples
         L_reg = torch.sum(L_reg * training_mask) / num_positive_samples
         L_detect = L_cls + self.lambda_reg * L_reg
-        return L_cls, L_reg, L_detect
+        return {
+            'cls_loss': L_cls, 
+            'reg_loss': L_reg, 
+            'detect_loss': L_detect
+        }
 
     def cls_loss(self, score_map_pred, score_map_true, training_mask):
         """ Classification loss. """
-        L_cls = F.binary_cross_entropy(
+        return F.binary_cross_entropy(
             input=score_map_pred, 
             target=score_map_true, 
             reduction='none'
         )
-        return L_cls
 
     def reg_loss(self, geo_map_pred, geo_map_true, angle_map_pred, angle_map_true):
         """ Regression loss. """
         L_iou = self.iou_loss(geo_map_pred, geo_map_true)
         L_angle = torch.cos(angle_map_pred - angle_map_true)
-        L_reg = L_iou + self.lambda_angle * (1 - L_angle)
-        return L_reg
+        return L_iou + self.lambda_angle * (1 - L_angle)
 
     def iou_loss(self, geo_map_pred, geo_map_true, smooth=1):
         """ IoU loss function. The algorithm is described in the paper
@@ -48,8 +50,7 @@ class DetectionLoss(torch.nn.Module):
         area_intersect = h_intersect * w_intersect
         area_union = area_true + area_pred - area_intersect
         iou = (area_intersect + smooth) / (area_union + smooth)
-        L_iou = -torch.log(iou)
-        return L_iou
+        return -torch.log(iou)
 
 class RecognitionLoss(nn.Module):
     def __init__(self):
@@ -57,8 +58,7 @@ class RecognitionLoss(nn.Module):
         self.ctc_loss = CTCLoss(blank=0, reduction='mean', zero_infinity=True)
 
     def forward(self, indexed_tokens_pred, seq_lens_pred, indexed_tokens_true, seq_lens_true):
-        L_recog = self.ctc_loss(indexed_tokens_pred, indexed_tokens_true, seq_lens_pred, seq_lens_true)
-        return L_recog
+        return self.ctc_loss(indexed_tokens_pred, indexed_tokens_true, seq_lens_pred, seq_lens_true)
 
 class FOTSLoss(nn.Module):
     def __init__(self, lambda_recog=1):
@@ -70,7 +70,7 @@ class FOTSLoss(nn.Module):
     def forward(self, score_map_pred, geo_map_pred, angle_map_pred,
             score_map_true, geo_map_true, angle_map_true, training_mask,
             indexed_tokens_pred, seq_lens_pred, indexed_tokens_true, seq_lens_true):
-        L_cls, L_reg, L_detect = self.detection_loss(
+        L_detect_dict = self.detection_loss(
             score_map_pred, geo_map_pred, angle_map_pred,  
             score_map_true, geo_map_true, angle_map_true,
             training_mask
@@ -79,5 +79,11 @@ class FOTSLoss(nn.Module):
             indexed_tokens_pred, seq_lens_pred, 
             indexed_tokens_true, seq_lens_true
         )
-        L = L_detect + self.lambda_recog * L_recog
-        return L_cls, L_reg, L_detect, L_recog, L
+        L = L_detect_dict['detect_loss'] + self.lambda_recog * L_recog
+        return {
+            'cls_loss': L_detect_dict['cls_loss'], 
+            'reg_loss': L_detect_dict['reg_loss'], 
+            'detect_loss': L_detect_dict['detect_loss'], 
+            'recog_loss': L_recog, 
+            'fots_loss': L
+        }
