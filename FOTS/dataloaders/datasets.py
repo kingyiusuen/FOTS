@@ -137,6 +137,9 @@ class SynthText(Dataset):
         bboxes = self.all_bboxes[idx]
         # zip x and y to get to a list of points
         bboxes = [list(zip(bboxes[0,:,i], bboxes[1,:,i])) for i in range(bboxes.shape[2])]
+        for bbox in bboxes:
+            if not Polygon(bbox).is_valid:
+                raise ValueError(f"Bounding box {bbox} is not valid")
         # make sure the number of bboxes is the same as the number of texts
         assert len(bboxes) == len(texts)
         # convert to numpy arrays
