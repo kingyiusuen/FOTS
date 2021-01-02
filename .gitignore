@@ -1,7 +1,7 @@
-/logs
-/__pycache__
-/junk
-/datasets
+logs/
+__pycache__/
+datasets/
+legacy/
 p2.xlarge.key.pem
 test.py
 test.ipynb
