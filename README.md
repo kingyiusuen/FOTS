@@ -1,6 +1,6 @@
 # FOTS: Fast Oriented Text Spotting with a Unified Network
 
-This is a Pytorch implementation of [FOTS: Fast Oriented Text Spotting with a Unified Network](https://arxiv.org/pdf/1801.01671.pdf). It is **incomplete** at the moment. I haven't trained the model yet and am still fixing bugs.
+This is a Pytorch implementation of [FOTS: Fast Oriented Text Spotting with a Unified Network](https://arxiv.org/pdf/1801.01671.pdf). The detection branch is basically done but I have not trained the model to verify its correctness since I have very limited computational resources.
 
 ## Model Architecture
 
@@ -36,4 +36,6 @@ To test the performance of a trained model, use ``--test``, followed by the name
 $ python fots.py --test ICDAR2013 --ckpt checkpoint.pt
 ```
 
-## Pretrained Model
+## Difference with the original model
+
+- [Online Hard Example Mining (OHME)](https://arxiv.org/abs/1604.03540) is not implemented.

@@ -28,7 +28,7 @@ class SharedConv(nn.Module):
     def __init__(self):
         super().__init__()
         # Resnet as backbone
-        self.resnet = torchvision.models.resnet34(pretrained=True)
+        self.resnet = torchvision.models.resnet50(pretrained=True)
         self.conv1 = nn.Sequential(
             self.resnet.conv1,
             self.resnet.bn1,
