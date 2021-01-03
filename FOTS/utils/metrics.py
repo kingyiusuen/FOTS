@@ -81,7 +81,11 @@ def true_false_positives(bboxes_pred, bboxes_true, iou_threshold=0.5):
             else:
                 false_positives += 1
     num_of_gt_bboxes = sum(len(bboxes_true[i]) for i in range(num_of_images))
-    return {'true_positives': true_positives, 'false_positives': false_positives, 'num_of_gt_bboxes': num_of_gt_bboxes}
+    return {
+        'true_positives': true_positives, 
+        'false_positives': false_positives, 
+        'num_of_gt_bboxes': num_of_gt_bboxes
+    }
 
 def precision_recall_f1(true_positives, false_positives, num_of_gt_bboxes):
     if true_positives == false_positives == 0:
