@@ -20,7 +20,7 @@ def evaluate(model, test_dataset):
     model.to(device)
     model.eval()
     with torch.no_grad():
-        for img, bboxes_true, _ in tqdm(test_dataset, desc="Testing"):
+        for img, bboxes_true, _ in tqdm(test_dataset, desc="Evaluating"):
             img, bboxes_true = fit_img_to_net_arch(img, bboxes_true)
             img = torch.as_tensor(img, dtype=torch.float)
             img.to(device)
@@ -32,7 +32,7 @@ def evaluate(model, test_dataset):
             num_of_gt_bboxes += test_outputs['num_of_gt_bboxes']
     eval_metrics = precision_recall_f1(true_positives, false_positives, num_of_gt_bboxes)
     for key, val in eval_metrics.items():
-        print(f"{key}: val\n")
+        print(f"{key}: {val}\n")
     return eval_metrics
 
 if __name__ == "__main__":
@@ -52,7 +52,8 @@ if __name__ == "__main__":
     # create a model instance and load a checkpoint if provided
     model = FOTSModel()
     if args.ckpt:
-        checkpoint = torch.load(args.ckpt)
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        checkpoint = torch.load(args.ckpt, map_location=device)
         model.load_state_dict(checkpoint['model_state_dict'])
     model = nn.DataParallel(model)
     # perform text detection and recognition on images
