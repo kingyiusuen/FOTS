@@ -30,7 +30,7 @@ class ICDAR(Dataset):
                 self.gt_dir = config["dataset"]["ICDAR2015"]["train_gt"]
             else:
                 self.img_dir = config["dataset"]["ICDAR2015"]["test_img"]
-                self.gt_dir = config["dataset"]["ICDAR2015"]["test_img"]
+                self.gt_dir = config["dataset"]["ICDAR2015"]["test_gt"]
         else:
             raise ValueError('Year must be either 2013 or 2015.')
         self.img_filenames = [file.name for file in os.scandir(self.img_dir)]

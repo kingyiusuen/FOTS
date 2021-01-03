@@ -5,6 +5,8 @@ import numpy as np
 import torch
 from torchvision import transforms
 
+np.seterr(all='raise')
+
 def rescale(img, bboxes, scale_x, scale_y):
     """ Rescale the input image and bounding boxes.
 
@@ -382,8 +384,6 @@ def distance_from_point_to_line(point, line_p1, line_p2):
     norm_of_cross_product = np.linalg.norm(np.cross(line_p2 - line_p1, line_p2 - point))
     norm_of_line = np.linalg.norm(line_p2 - line_p1)
     distance = norm_of_cross_product / norm_of_line
-    if norm_of_line < 0:
-        print(point, line_p1, line_p2, norm_of_cross_product, norm_of_line)
     return distance
 
 def generate_rbox(img, bboxes, texts):

@@ -27,7 +27,7 @@ dataloader_factory:
   ICDAR2013: 
     val_ratio: 0.2
     seed: 0
-  ICDAR2013: 
+  ICDAR2015: 
     val_ratio: 0.2
     seed: 0
   SynthText: 
