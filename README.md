@@ -30,10 +30,10 @@ If you want to resume training from a checkpoint, add ``--ckpt`` with the path t
 $ python fots.py --train ICDAR2013 --ckpt checkpoint.pt
 ```
 
-To test the performance of a trained model, use ``--test``, followed by the name of the dataset and use ``--ckpt`` to specify the path to the trained model. The precision, recall and f1 score of the test dataset will be printed out. Note that SynthText does not have a test dataset. For example,
+To test the performance of a trained model, use ``--eval``, followed by the name of the dataset and use ``--ckpt`` to specify the path to the trained model. The precision, recall and f1 score of the test dataset will be printed out. Note that SynthText does not have a test dataset. For example,
 
 ```
-$ python fots.py --test ICDAR2013 --ckpt checkpoint.pt
+$ python fots.py --eval ICDAR2013 --ckpt checkpoint.pt
 ```
 
 ## Difference with the original model
